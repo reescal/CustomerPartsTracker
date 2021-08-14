@@ -1,0 +1,57 @@
+﻿@page "/trackers"
+@attribute [Authorize]
+@using CustomerPartsTracker.Shared.Models
+
+<PageProgress Visible="@progressBar" />
+
+<CustomSnackbar @ref="customSnackbar" />
+
+<TrackersModal @ref="modal" Customers="customers" Parts="parts" Action="(Action.Add, Action.Edit)" Save="CreateTrackers"/>
+
+<div class="row" style="margin-bottom: 2px">
+    <Buttons>
+        <Button Clicked="@(() => modal.Show(Action.Add))" Color="Color.Secondary">@Action.Add</Button>
+        <Button Clicked="@(() => modal.Show(Action.Edit, selectedTracker))" Disabled="@(selectedTracker.Id == 0)" Color="Color.Secondary">@Action.Edit</Button>
+        <Dropdown Disabled="@(selectedTracker.Id == 0 || selectedTracker.ShippedDate.HasValue)">
+            <DropdownToggle Color="Color.Secondary">
+                Ship Out
+            </DropdownToggle>
+            <DropdownMenu>
+                <DropdownItem Clicked="@ShipOut" Value="@ShipOutAction.SinglePart">@ShipOutAction.SinglePart</DropdownItem>
+                <DropdownDivider />
+                <DropdownItem Clicked="@ShipOut" Value="@ShipOutAction.EntireLot">@ShipOutAction.EntireLot</DropdownItem>
+            </DropdownMenu>
+        </Dropdown>
+    </Buttons>
+    <ListDownload @ref="@listDownload" />
+</div>
+
+<div class="row">
+    <DataGrid TItem="Tracker" Data="@trackers"
+              Sortable="true" Hoverable="true" Responsive="true"
+              Filterable="true" FilterMethod="DataGridFilterMethod.Contains" FilteredDataChanged="@(e => listDownload.Data = e.ToList().AsReadOnly())"
+              ShowPager="true" PagerPosition="DataGridPagerPosition.Top" ShowPageSizes="true" PageSize="10"
+              @bind-SelectedRow="@selectedTracker"
+              DetailRowTrigger="@(item => item.Id == selectedTracker?.Id && ((!string.IsNullOrEmpty(item.QaNote) || !string.IsNullOrEmpty(item.Comments))))">
+        <DataGridColumns>
+            <DataGridColumn TItem="Tracker" Field="@nameof(Tracker.PT)" Caption="P.T. No." />
+            <DataGridColumn TItem="Tracker" Field="Part.Customer.Name" Caption="@nameof(Customer)" />
+            <DataGridColumn TItem="Tracker" Field="Part.Name" Caption="@nameof(Part)" />
+            <DataGridColumn TItem="Tracker" Field="@nameof(Tracker.SerialNumber)" Caption="Serial No." />
+            <DataGridColumn TItem="Tracker" Field="@nameof(Tracker.SecondaryId)" Caption="Secondary ID" />
+            <DataGridColumn TItem="Tracker" Field="@nameof(Tracker.LotNo)" Caption="Lot No." />
+            <DataGridColumn TItem="Tracker" Field="@nameof(Tracker.PoNo)" Caption="P.O. No." />
+            <DataGridColumn TItem="Tracker" Field="@nameof(Tracker.ProjectNo)" Caption="Proj. No." />
+            <DataGridDateColumn TItem="Tracker" Field="@nameof(Tracker.ReceivedDate )" DisplayFormat="{0:MM/dd/yyyy}" Caption="Received on" />
+            <DataGridDateColumn TItem="Tracker" Field="@nameof(Tracker.ShippedDate )" DisplayFormat="{0:MM/dd/yyyy}" Caption="Shipped on" />
+        </DataGridColumns>
+        <DetailRowTemplate>
+            @{
+                <Heading Size="HeadingSize.Is6">QA Note</Heading>
+                <Paragraph>@selectedTracker.QaNote</Paragraph>
+                <Heading Size="HeadingSize.Is6">Comments</Heading>
+                <Paragraph>@selectedTracker.Comments</Paragraph>
+            }
+        </DetailRowTemplate>
+    </DataGrid>
+</div>

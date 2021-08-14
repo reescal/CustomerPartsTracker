@@ -1,0 +1,189 @@
+﻿@using AntDesign.Select
+@using CustomerPartsTracker.Shared.Models
+
+@if(Customers is not null && Parts is not null)
+{
+    <Modal @ref="Modal">
+    <ModalContent IsCentered="true">
+        <ModalHeader>
+            <ModalTitle>@modalTitle</ModalTitle>
+            <CloseButton />
+        </ModalHeader>
+        <ModalBody>
+            <Validations @ref="validations" Mode="ValidationMode.Manual" ValidateOnLoad="false" Model="@Tracker" ValidatedAll="Save">
+                <Field Horizontal="true">
+                    <FieldLabel ColumnSize="ColumnSize.Is4">
+                        <Tooltip Text="Requires autocomplete selection.">
+                            @nameof(Customer) @nameof(Customer.Name)<code>*</code>
+                        </Tooltip>
+                    </FieldLabel>
+                    <FieldBody ColumnSize="ColumnSize.Is8">
+                        <Autocomplete TItem="Customer" TValue="short" Data="@Customers"
+                                      TextField="@(item=>item.Name)" ValueField="@(item=>item.Id)"
+                                      SelectedValue="@Tracker.Part.CustomerId" SelectedValueChanged="@CustomerSelectionHandler"
+                                      SearchChanged="@CustomerSearchHandler"
+                                      Placeholder=@($"Enter {nameof(Customer)} {nameof(Customer.Name)}...")
+                                      Validator="@ValidateAutoComplete"
+                                      Filter="AutocompleteFilter.Contains" />
+                    </FieldBody>
+                </Field>
+                <Field Horizontal="true">
+                    <FieldLabel ColumnSize="ColumnSize.Is4">
+                        <Tooltip Text="Requires autocomplete selection.">
+                            @nameof(Part) @nameof(Part.Name)<code>*</code>
+                        </Tooltip>
+                    </FieldLabel>
+                    <FieldBody ColumnSize="ColumnSize.Is8">
+                        <Autocomplete TItem="Part" TValue="short"
+                                      Data="@Parts?.Where(p => p.CustomerId == Tracker.Part?.CustomerId).ToList()"
+                                      TextField="@(item=>item.Name)" ValueField="@(item=>item.Id)"
+                                      SelectedValue="@Tracker.PartId" SelectedValueChanged="@PartSelectionHandler"
+                                      SearchChanged="@PartSearchHandler"
+                                      Placeholder=@($"Enter {nameof(Part)} {nameof(Part.Name)}...")
+                                      Disabled="@(Tracker.Part?.CustomerId == 0)"
+                                      Validator="@ValidateAutoComplete"
+                                      Filter="AutocompleteFilter.Contains" />
+                    </FieldBody>
+                </Field>
+                <Field Horizontal="true">
+                    @if (modalTitle.StartsWith(Action.Add))
+                    {
+                        <FieldLabel ColumnSize="ColumnSize.Is4">
+                            <Tooltip Text="Between 1 and 10.">
+                                @nameof(Lot.Quantity)
+                            </Tooltip>
+                        </FieldLabel>
+                        <FieldBody ColumnSize="ColumnSize.Is8">
+                            <Validation Validator="@ValidateSerialNumbers">
+                                <NumericEdit TValue="int?" Value="@Lot.Quantity" ReadOnly="@qtyReadOnly" ValueChanged="(x => Lot.Quantity = x)" />
+                                <ValidationError />
+                            </Validation>
+                        </FieldBody>
+                    }
+                    else
+                    {
+                        <FieldLabel ColumnSize="ColumnSize.Is4">
+                            <Tooltip Text=@($"Maximum {TrackerValidations.SNMaxLength} characters long.")>
+                                Serial Number
+                            </Tooltip>
+                        </FieldLabel>
+                        <FieldBody ColumnSize="ColumnSize.Is8">
+                            <Validation>
+                                <TextEdit Placeholder="Enter serial number..." @bind-Text="@Tracker.SerialNumber" />
+                                <ValidationError />
+                            </Validation>
+                        </FieldBody>
+                    }
+                </Field>
+                @if (modalTitle.StartsWith(Action.Add))
+                {
+                    <Field Horizontal="true" >
+                        <FieldLabel ColumnSize="ColumnSize.Is4">
+                            <Tooltip Text=@($"Maximum {TrackerValidations.SNMaxLength} characters long.")>
+                                Serial Numbers
+                            </Tooltip>
+                        </FieldLabel>
+                        <FieldBody ColumnSize="ColumnSize.Is8">
+                            <AntDesign.Select Mode="tags"
+                                                MaxTagCount="ResponsiveTag.Responsive"
+                                                @bind-Values="@Lot.SerialNumbers"
+                                                LabelName="@nameof(Tag.Label)" ValueName="@nameof(Tag.Value)"
+                                                TItemValue="string" TItem="Tag"
+                                                TokenSeparators="new[] { ',' }"
+                                                Disabled="false"
+                                                OnSelectedItemsChanged="@OnSelectedItemsChangedHandler"
+                                                OnClearSelected="@OnClearSelectedHandler" AllowClear="true"
+                                                Placeholder="Enter serial numbers..."
+                                                Size="large">
+                            </AntDesign.Select>
+                        </FieldBody>
+                    </Field>
+                }
+                <Validation>
+                    <Field Horizontal="true">
+                        <FieldLabel ColumnSize="ColumnSize.Is4">
+                            <Tooltip Text=@($"Maximum {TrackerValidations.SecondaryIDMaxLength} characters long.")>
+                                Secondary ID
+                            </Tooltip>
+                        </FieldLabel>
+                        <FieldBody ColumnSize="ColumnSize.Is8">
+                            <TextEdit Placeholder="Enter secondary ID..." @bind-Text="@Tracker.SecondaryId" />
+                            <ValidationError />
+                        </FieldBody>
+                    </Field>
+                </Validation>
+                <Validation>
+                    <Field Horizontal="true">
+                        <FieldLabel ColumnSize="ColumnSize.Is4">
+                            <Tooltip Text=@($"Maximum {TrackerValidations.PONoMaxLength} characters long.")>
+                                P.O. Number
+                            </Tooltip>
+                        </FieldLabel>
+                        <FieldBody ColumnSize="ColumnSize.Is8">
+                            <TextEdit Placeholder="Enter P.O. number..." @bind-Text="@Tracker.PoNo" />
+                            <ValidationError />
+                        </FieldBody>
+                    </Field>
+                </Validation>
+                <Validation>
+                    <Field Horizontal="true">
+                        <FieldLabel ColumnSize="ColumnSize.Is4">
+                            <Tooltip Text=@($"Required. Must be {TrackerValidations.ProjNoMinLength}-{TrackerValidations.ProjNoMaxLength} characters long.")>
+                                Project Number<code>*</code>
+                            </Tooltip>
+                        </FieldLabel>
+                        <FieldBody ColumnSize="ColumnSize.Is8">
+                            <TextEdit Placeholder="Enter Project number..." @bind-Text="@Tracker.ProjectNo" />
+                            <ValidationError />
+                        </FieldBody>
+                    </Field>
+                </Validation>
+                <Validation>
+                    <Field Horizontal="true">
+                        <FieldLabel ColumnSize="ColumnSize.Is4">
+                            <Tooltip Text="Required. Must be set to today's date or earlier.">
+                                Received Date<code>*</code>
+                            </Tooltip>
+                        </FieldLabel>
+                        <FieldBody ColumnSize="ColumnSize.Is8">
+                            <DateEdit TValue="DateTime" @bind-Date="@Tracker.ReceivedDate" Min="@DateTime.Today.AddMonths(-1)" Max="@DateTime.Today" />
+                            <ValidationError />
+                        </FieldBody>
+                    </Field>
+                </Validation>
+                @if (modalTitle.StartsWith(Action.Edit))
+                {
+                    <Validation Validator="@(e => (e.Status, e.ErrorText) = BoolToValStatus(TrackerValidations.ValidateShippedDate(Tracker)))">
+                        <Field Horizontal="true">
+                            <FieldLabel ColumnSize="ColumnSize.Is4">Shipped Date</FieldLabel>
+                            <FieldBody ColumnSize="ColumnSize.Is8">
+                                <DateEdit TValue="DateTime?" @bind-Date="@Tracker.ShippedDate" Min="@DateTime.Today.AddMonths(-1)" Max="@DateTime.Today.AddMonths(1)" />
+                                <ValidationError />
+                            </FieldBody>
+                        </Field>
+                    </Validation>
+                }
+            </Validations>
+            <Field>
+                <FieldLabel>QA Note</FieldLabel>
+                <FieldBody>
+                    <MemoEdit @bind-Text="@Tracker.QaNote" Rows="2" />
+                </FieldBody>
+            </Field>
+            <Field>
+                <FieldLabel>Comments</FieldLabel>
+                <FieldBody>
+                    <MemoEdit @bind-Text="@Tracker.Comments" Rows="2" />
+                </FieldBody>
+            </Field>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" Clicked="@Modal.Hide">Close</Button>
+            <Button Color="Color.Success" Clicked="@(() => validations.ValidateAll())">Save</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+}
+
+@code {
+}

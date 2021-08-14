@@ -1,0 +1,54 @@
+﻿@using CustomerPartsTracker.Shared.Models
+<Button Clicked="Download" Disabled="@(!_data.Any())" Color="Color.Secondary" style="margin-left: 5px">@nameof(Download)</Button>
+
+@code {
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; }
+    private IReadOnlyList<Tracker> _data { get; set; } = new List<Tracker>();
+    public IReadOnlyList<Tracker> Data
+    {
+        set
+        {
+            _data = value;
+            StateHasChanged();
+        }
+    }
+
+    public async Task Download()
+    {
+        var prettyData = from d in _data
+                         select new
+                         {
+                             PT = d.PT,
+                             CustomerName = d.Part.Customer.Name.Replace(",", ""),
+                             PartName = d.Part.Name.Replace(",", ""),
+                             SerialNumber = d.SerialNumber?.Replace(",", ""),
+                             SecondaryID = d.SecondaryId?.Replace(",", ""),
+                             LotNo = d.LotNo.Replace(",", ""),
+                             PoNo = d.PoNo?.Replace(",", ""),
+                             Project = d.ProjectNo.Replace(",", ""),
+                             ReceivedDate = d.ReceivedDate,
+                             ShippedDate = d.ShippedDate,
+                             QANotes = d.QaNote?.Replace(",", ""),
+                             Comments = d.Comments?.Replace(",", "")
+                         };
+        await JSRuntime.InvokeAsync<object>("saveAsFile", "data.csv", ToCsv(prettyData));
+    }
+
+    private static string ToCsv<T>(IEnumerable<T> objects, string separator = ",", bool header = true)
+    {
+        System.Reflection.FieldInfo[] fields = typeof(T).GetFields();
+        System.Reflection.PropertyInfo[] properties = typeof(T).GetProperties();
+        string csv = "";
+        if (header)
+        {
+            csv += String.Join(separator, fields.Select(f => f.Name).Concat(properties.Select(p => p.Name)).ToArray());
+        }
+        foreach (var o in objects)
+        {
+            csv += string.Join(separator, fields.Select(f => (f.GetValue(o) ?? "").ToString())
+                .Concat(properties.Select(p => (p.GetValue(o, null) ?? "").ToString())).ToArray()) + Environment.NewLine;
+        }
+        return Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes(csv));
+    }
+}

@@ -1,0 +1,17 @@
+﻿<Snackbar @ref="snackbar" Color="@snackbarColor" Interval="2000">
+    <SnackbarBody>@snackbarBody</SnackbarBody>
+</Snackbar>
+
+@code {
+
+    private Snackbar snackbar { get; set; }
+    private SnackbarColor snackbarColor { get; set; }
+    private string snackbarBody { get; set; }
+
+    public void SetColorMessageAndShow(SnackbarColor color, string message)
+    {
+        snackbarColor = color;
+        snackbarBody = message;
+        snackbar.Show();
+    }
+}

@@ -1,0 +1,30 @@
+﻿<div class="container-fluid">
+    <div class="navbar-header">
+        <a class="navbar-brand" href="#">
+            <img src="images/logo.png">
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsingNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+    <div class="navbar-collapse collapse" id="collapsingNavbar">
+        <ul class="navbar-nav">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-clipboard" aria-hidden="true"></span> Trackers
+            </NavLink>
+            <NavLink class="nav-link" href="parts">
+                <span class="oi oi-wrench" aria-hidden="true"></span> Parts
+            </NavLink>
+            <NavLink class="nav-link" href="customers">
+                <span class="oi oi-people" aria-hidden="true"></span> Customers
+            </NavLink>
+        </ul>
+        <ul class="nav navbar-nav ml-auto">
+            <LoginDisplay />
+        </ul>
+    </div>
+</div>
+
+@code {
+
+}

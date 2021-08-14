@@ -1,0 +1,88 @@
+﻿@page "/parts"
+@using CustomerPartsTracker.Shared.Models
+@attribute [Authorize]
+
+<PageProgress Visible="@progressBar" />
+
+<CustomSnackbar @ref="customSnackbar" />
+
+<div class="row" style="margin-bottom: 2px">
+    <Buttons>
+        <Button Clicked="@(() => ShowModal(modalAction.Add))" Color="Color.Secondary">@modalAction.Add</Button>
+        <Button Clicked="@(() => ShowModal(modalAction.Edit))" Disabled="@(selectedPart.Id == 0)" Color="Color.Secondary">@modalAction.Edit</Button>
+    </Buttons>
+</div>
+
+<div class="row">
+    <DataGrid TItem="Part" Data="@parts"
+              Sortable="true" Hoverable="true"
+              Filterable="true" FilterMethod="DataGridFilterMethod.Contains"
+              ShowPager="true" PagerPosition="DataGridPagerPosition.Top" ShowPageSizes="true" PageSize="10"
+              @bind-SelectedRow="@selectedPart">
+        <DataGridColumns>
+            <DataGridNumericColumn TItem="Part" Field="@nameof(Part.Id)" Caption="@(nameof(Part.Id).ToUpper())" Width="60px" />
+            <DataGridColumn TItem="Part" Field="Customer.Name" Caption="@nameof(Customer)" />
+            <DataGridColumn TItem="Part" Field="@nameof(Part.Name)" Caption="@nameof(Part.Name)" />
+            <DataGridColumn TItem="Part" Field="@nameof(Part.Number)" Caption="@nameof(Part.Number)" />
+        </DataGridColumns>
+    </DataGrid>
+</div>
+
+<Modal @ref="modal">
+    <ModalContent IsCentered="true">
+        <ModalHeader>
+            <ModalTitle>@modalTitle</ModalTitle>
+            <CloseButton />
+        </ModalHeader>
+        <ModalBody>
+            <Validations @ref="validations" Mode="ValidationMode.Manual" ValidateOnLoad="false" Model="@inputPart" ValidatedAll="DuplicateCheck">
+                <Field Horizontal="true">
+                    <FieldLabel ColumnSize="ColumnSize.Is4">
+                        <Tooltip Text="Requires autocomplete selection.">
+                            @nameof(Customer) @nameof(Customer.Name)<code>*</code>
+                        </Tooltip>
+                    </FieldLabel>
+                    <FieldBody ColumnSize="ColumnSize.Is8">
+                        <Autocomplete Data="@customers" TItem="Customer" TValue="short"
+                                      TextField="@((item)=>item.Name)" ValueField="@((item)=>item.Id)"
+                                      SelectedValue="@inputPart.CustomerId" SelectedValueChanged="@(e => inputPart.CustomerId = e)"
+                                      SearchChanged="@(s => inputPart.CustomerId = !string.IsNullOrEmpty(s) ? default : inputPart.CustomerId)"
+                                      Placeholder=@($"Enter {nameof(Customer)} {nameof(Customer.Name)}...")
+                                      Validator="@(e => (e.Status, e.ErrorText) = Convert.ToInt16(e.Value) > 0 ? (ValidationStatus.Success, "") : (ValidationStatus.Error, "Please select a customer."))"
+                                      Filter="AutocompleteFilter.Contains" />
+                    </FieldBody>
+                </Field>
+                <Validation>
+                    <Field Horizontal="true">
+                        <FieldLabel ColumnSize="ColumnSize.Is4">
+                            <Tooltip Text=@($"Required. {PartValidations.NameMinLength}-{PartValidations.NameMaxLength} characters long.")>
+                                @nameof(Part) @nameof(Part.Name)<code>*</code>
+                            </Tooltip>
+                        </FieldLabel>
+                        <FieldBody ColumnSize="ColumnSize.Is8">
+                            <TextEdit Placeholder=@($"Enter {nameof(Part)} {nameof(Part.Name)}...") @bind-Text="@inputPart.Name" />
+                            <ValidationError />
+                        </FieldBody>
+                    </Field>
+                </Validation>
+                <Validation>
+                    <Field Horizontal="true">
+                        <FieldLabel ColumnSize="ColumnSize.Is4">
+                            <Tooltip Text=@($"Required. {PartValidations.NumberMinLength}-{PartValidations.NumberMaxLength} characters long.")>
+                                @nameof(Part) @nameof(Part.Number)<code>*</code>
+                            </Tooltip>
+                        </FieldLabel>
+                        <FieldBody ColumnSize="ColumnSize.Is8">
+                            <TextEdit Placeholder=@($"Enter {nameof(Part)} {nameof(Part.Number)}...") @bind-Text="@inputPart.Number" />
+                            <ValidationError />
+                        </FieldBody>
+                    </Field>
+                </Validation>
+            </Validations>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" Clicked="@(() => modal.Hide())">Close</Button>
+            <Button Color="Color.Primary" Clicked="@(() => validations.ValidateAll())">Save</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
